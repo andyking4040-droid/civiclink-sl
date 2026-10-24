@@ -1,0 +1,141 @@
+/* CivicLINK – ACOSAT Brand Colors (Blue, Red, Black) */
+:root {
+  --black: #0a0a0a;
+  --blue: #0033a0;
+  --blue-light: #1a4db5;
+  --red: #c8102e;
+  --red-dark: #a00d25;
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --text: #0a0a0a;
+  --muted: #5a5a5a;
+  --border: #d8dce3;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.container { max-width: 480px; margin: 0 auto; padding: 1rem 1.1rem 2.5rem; }
+.wide { max-width: 900px; margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
+
+/* Header */
+.header {
+  background: var(--black);
+  color: #fff;
+  position: sticky; top: 0; z-index: 40;
+}
+.header-inner {
+  max-width: 900px; margin: 0 auto;
+  padding: 0.75rem 1.1rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+}
+.logo { font-weight: 800; font-size: 1.2rem; color: #fff; letter-spacing: -0.03em; }
+.logo span { color: #7eb3ff; }
+.slogan { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #ff6b7a; }
+
+/* Cards & buttons */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 48px; padding: 0.7rem 1.2rem;
+  border-radius: 10px; font-weight: 600; font-size: 1rem;
+  border: none; cursor: pointer; text-decoration: none; width: 100%;
+  transition: transform 0.1s, opacity 0.15s;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: var(--blue-light); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover { background: var(--red-dark); }
+.btn-dark { background: var(--black); color: #fff; }
+.btn-outline { background: var(--surface); border: 1.5px solid var(--border); color: var(--text); }
+.btn-sm { min-height: 38px; padding: 0.4rem 0.9rem; font-size: 0.9rem; width: auto; }
+
+/* Forms */
+label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; }
+input, select, textarea {
+  width: 100%; padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 1rem; font-family: inherit; background: var(--surface); color: var(--text);
+  margin-bottom: 0.9rem;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,51,160,0.15);
+}
+
+/* Location page */
+.loc-header { text-align: center; padding: 1.5rem 0 1rem; }
+.loc-type {
+  display: inline-block; font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  background: #e8eef8; color: var(--blue); padding: 0.25rem 0.7rem; border-radius: 999px;
+  margin-bottom: 0.5rem;
+}
+.loc-name { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.verified { color: var(--blue); font-size: 0.85rem; font-weight: 600; margin-top: 0.3rem; }
+.detail-row { display: flex; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+.detail-row:last-child { border-bottom: none; }
+.detail-label { color: var(--muted); min-width: 80px; font-weight: 500; }
+
+/* Banner */
+.ask-banner {
+  background: linear-gradient(135deg, var(--black) 0%, var(--blue) 100%);
+  color: #fff; text-align: center; padding: 1rem;
+  font-weight: 700; font-size: 0.9rem; letter-spacing: 0.04em;
+}
+.ask-banner small { display: block; font-weight: 400; opacity: 0.85; margin-top: 0.2rem; font-size: 0.75rem; }
+
+/* Home */
+.hero { text-align: center; padding: 2.5rem 0 1.5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.4rem; color: var(--black); }
+.hero p { color: var(--muted); margin-bottom: 1.5rem; }
+.search-box { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+.search-box input { margin-bottom: 0; flex: 1; }
+
+.muted { color: var(--muted); font-size: 0.9rem; }
+.error { background: #fef2f2; color: #991b1b; padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.9rem; }
+.success { background: #f0fdf4; color: #166534; padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.9rem; }
+
+.qr-preview { text-align: center; padding: 1rem; }
+.qr-preview img { max-width: 240px; border: 1px solid var(--border); border-radius: 8px; }
+.qr-slogan { font-size: 0.85rem; font-weight: 800; color: var(--red); margin-top: 0.6rem; letter-spacing: 0.05em; }
+.qr-brand { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; }
+
+.loc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem;
+}
+.loc-card h3 { font-size: 1.05rem; margin-bottom: 0.2rem; }
+.badge {
+  font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem;
+  border-radius: 999px; text-transform: uppercase;
+}
+.badge-ok { background: #dbeafe; color: var(--blue); }
+.badge-no { background: #fee2e2; color: var(--red); }
+
+.footer { text-align: center; padding: 2rem 1rem; font-size: 0.75rem; color: var(--muted); }
+
+/* Google Translate */
+.goog-te-banner-frame { display: none !important; }
+body { top: 0 !important; }
+#google_translate_element { margin: 0.5rem 0; }
+#google_translate_element select {
+  padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid var(--border);
+  font-size: 0.85rem; width: auto; margin: 0;
+}

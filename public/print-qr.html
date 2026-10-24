@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Print QR – CivicLINK</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+    }
+    .sheet {
+      background: #fff;
+      width: 100%;
+      max-width: 360px;
+      padding: 1.75rem 1.5rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      text-align: center;
+    }
+    .brand {
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: #0a0a0a;
+      letter-spacing: -0.02em;
+    }
+    .brand span { color: #0033a0; }
+    .tag {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #c8102e;
+      margin: 0.35rem 0 1rem;
+      text-transform: uppercase;
+    }
+    .qr-wrap {
+      display: inline-block;
+      padding: 0.75rem;
+      border: 2px solid #0a0a0a;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .qr-wrap img { width: 220px; height: 220px; display: block; }
+    .loc-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: 1rem;
+      color: #0a0a0a;
+    }
+    .loc-meta { font-size: 0.8rem; color: #5a5a5a; margin-top: 0.25rem; }
+    .slogan-box {
+      margin-top: 1rem;
+      padding: 0.65rem;
+      background: #0a0a0a;
+      color: #fff;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+    .slogan-box small {
+      display: block;
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 0.2rem;
+      font-size: 0.7rem;
+      letter-spacing: 0;
+    }
+    .footer {
+      margin-top: 0.75rem;
+      font-size: 0.7rem;
+      color: #888;
+    }
+    .actions {
+      margin-top: 1.25rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      padding: 0.65rem 1.2rem;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+      background: #0033a0;
+    }
+    .btn-dark { background: #0a0a0a; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .actions { display: none !important; }
+      .sheet { box-shadow: none; max-width: 100%; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet" id="sheet">
+    <div class="brand">Civic<span>LINK</span></div>
+    <div class="tag">ASK&KNOW BEFORE YOU GO</div>
+    <div class="qr-wrap">
+      <img id="qr" src="" alt="QR Code" />
+    </div>
+    <div class="loc-name" id="name">—</div>
+    <div class="loc-meta" id="meta"></div>
+    <div class="slogan-box">
+      ASK&KNOW BEFORE YOU GO
+      <small>Save Time · Save Money · Avoid Unnecessary Trips</small>
+    </div>
+    <div class="footer">CivicLINK · ACOSAT Digital · Scan with any phone camera</div>
+  </div>
+  <div class="actions">
+    <button class="btn" onclick="window.print()">Print this page</button>
+    <a class="btn btn-dark" id="dl" download>Download QR image</a>
+    <a class="btn" href="/publisher" style="background:#5a5a5a;">Back</a>
+  </div>
+  <script>
+    const slug = location.pathname.split("/print-qr/")[1];
+    async function load() {
+      const res = await fetch("/api/location/" + slug);
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById("name").textContent = "Location not found";
+        return;
+      }
+      const l = data.location;
+      document.getElementById("name").textContent = l.name;
+      document.getElementById("meta").textContent =
+        [l.type, l.address].filter(Boolean).join(" · ");
+      const qrSrc = "/qrcodes/" + slug + ".png";
+      document.getElementById("qr").src = qrSrc;
+      document.getElementById("dl").href = qrSrc;
+      document.title = "Print QR – " + l.name;
+    }
+    load();
+  </script>
+</body>
+</html>

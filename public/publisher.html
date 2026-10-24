@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Publisher – CivicLINK</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div>
+        <div class="logo">Civic<span>LINK</span></div>
+        <div class="slogan">ASK&KNOW BEFORE YOU GO</div>
+      </div>
+      <button class="btn btn-outline btn-sm" style="color:#fff;border-color:#555;" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="wide">
+    <h2 style="margin:1rem 0 0.5rem;">My Locations</h2>
+    <p class="muted" id="welcome" style="margin-bottom:0.5rem;"></p>
+    <div id="subStatus" style="margin-bottom:1rem;"></div>
+
+    <button class="btn btn-red" style="width:auto;margin-bottom:1.25rem;" id="createBtn" onclick="showForm()">+ Create New Location</button>
+
+    <div id="formCard" class="card" style="display:none;">
+      <h3 style="margin-bottom:1rem;" id="formTitle">New Location</h3>
+      <div id="formErr" class="error" style="display:none;"></div>
+      <input type="hidden" id="editId" value="" />
+      <label>Name *</label>
+      <input type="text" id="name" placeholder="e.g. Bo Community Pharmacy" />
+      <label>Type</label>
+      <select id="type">
+        <option value="pharmacy">Pharmacy</option>
+        <option value="clinic">Clinic / Hospital</option>
+        <option value="ministry">Ministry / Government</option>
+        <option value="school">School / University</option>
+        <option value="business">Business</option>
+        <option value="church">Church</option>
+        <option value="mosque">Mosque</option>
+        <option value="market">Market Stall</option>
+        <option value="community">Community / Chiefdom</option>
+        <option value="other">Other</option>
+      </select>
+      <label>Address</label>
+      <input type="text" id="address" placeholder="Street, area, city" />
+      <label>Phone</label>
+      <input type="tel" id="phone" placeholder="+232 ..." />
+      <label>WhatsApp number (for live chat button)</label>
+      <input type="tel" id="whatsapp" placeholder="+232 ... (same as phone is fine)" />
+      <label>Opening Hours</label>
+      <input type="text" id="hours" placeholder="e.g. Mon–Fri 8am–5pm" />
+      <label>Services</label>
+      <input type="text" id="services" placeholder="e.g. Prescriptions, consultations" />
+      <label>Description</label>
+      <textarea id="description" rows="3" placeholder="Short description"></textarea>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveLocation()">Generate QR Code</button>
+      <button class="btn btn-outline" style="margin-top:0.5rem;" onclick="hideForm()">Cancel</button>
+    </div>
+
+    <div id="qrResult" class="card" style="display:none;">
+      <div class="success">Location saved successfully!</div>
+      <div class="qr-preview">
+        <img id="qrImg" src="" alt="QR Code" />
+        <div class="qr-slogan">ASK&KNOW BEFORE YOU GO</div>
+        <div class="qr-brand">CivicLINK · ACOSAT Digital</div>
+        <p class="muted" style="margin-top:0.75rem;" id="qrLink"></p>
+        <a id="qrDownload" class="btn btn-dark btn-sm" style="margin-top:0.75rem;" download>Download QR Code</a>
+      </div>
+      <p class="muted" style="text-align:center;margin-top:1rem;">
+        Print this QR and post it at your location. The center logo helps prevent fraud.
+      </p>
+    </div>
+
+    <div id="list"></div>
+  </main>
+
+  <script>
+    let editingId = null;
+
+    async function checkAuth() {
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      if (!data.user) { location.href = "/login"; return; }
+      document.getElementById("welcome").textContent = "Welcome, " + data.user.name;
+      const box = document.getElementById("subStatus");
+      const u = data.user;
+      if (u.role === "admin") {
+        box.innerHTML = '<span class="badge badge-ok">Admin</span>';
+      } else if (u.subscription_active) {
+        const exp = u.subscription_expires_at
+          ? new Date(u.subscription_expires_at).toLocaleDateString()
+          : "—";
+        box.innerHTML = `<div class="success" style="margin:0;">
+          Access Pass active${u.plan ? " (" + u.plan + ")" : ""} · Expires ${exp}
+        </div>`;
+      } else {
+        box.innerHTML = `<div class="error" style="margin:0;">
+          No active Access Pass.
+          <a href="/register" style="color:inherit;font-weight:700;">Subscribe to create locations</a>
+        </div>`;
+        document.getElementById("createBtn").style.display = "none";
+      }
+      if (location.search.includes("activated=1")) {
+        box.innerHTML += `<div class="success" style="margin-top:0.5rem;">Subscription activated. You can create locations and QR codes.</div>`;
+      }
+      loadLocations();
+    }
+
+    function showForm(loc) {
+      editingId = loc ? loc.id : null;
+      document.getElementById("formTitle").textContent = loc ? "Edit Location" : "New Location";
+      document.getElementById("saveBtn").textContent = loc ? "Save Changes" : "Generate QR Code";
+      document.getElementById("name").value = loc ? loc.name : "";
+      document.getElementById("type").value = loc ? loc.type : "business";
+      document.getElementById("address").value = loc ? (loc.address || "") : "";
+      document.getElementById("phone").value = loc ? (loc.phone || "") : "";
+      document.getElementById("whatsapp").value = loc ? (loc.whatsapp || loc.phone || "") : "";
+      document.getElementById("hours").value = loc ? (loc.hours || "") : "";
+      document.getElementById("services").value = loc ? (loc.services || "") : "";
+      document.getElementById("description").value = loc ? (loc.description || "") : "";
+      document.getElementById("formCard").style.display = "block";
+      document.getElementById("qrResult").style.display = "none";
+      window.scrollTo(0, 0);
+    }
+    function hideForm() {
+      document.getElementById("formCard").style.display = "none";
+      editingId = null;
+    }
+
+    async function saveLocation() {
+      const err = document.getElementById("formErr");
+      err.style.display = "none";
+      const body = {
+        name: document.getElementById("name").value.trim(),
+        type: document.getElementById("type").value,
+        address: document.getElementById("address").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        whatsapp: document.getElementById("whatsapp").value.trim(),
+        hours: document.getElementById("hours").value.trim(),
+        services: document.getElementById("services").value.trim(),
+        description: document.getElementById("description").value.trim()
+      };
+      if (!body.name) {
+        err.textContent = "Name is required";
+        err.style.display = "block";
+        return;
+      }
+
+      let res, data;
+      if (editingId) {
+        res = await fetch("/api/locations/" + editingId, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        data = await res.json();
+        if (!res.ok) {
+          err.textContent = data.error;
+          err.style.display = "block";
+          return;
+        }
+        hideForm();
+        loadLocations();
+        alert("Location updated successfully");
+        return;
+      }
+
+      res = await fetch("/api/locations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      data = await res.json();
+      if (!res.ok) {
+        err.textContent = data.error;
+        err.style.display = "block";
+        return;
+      }
+      hideForm();
+      const qr = document.getElementById("qrResult");
+      qr.style.display = "block";
+      document.getElementById("qrImg").src = data.location.qr_image + "?t=" + Date.now();
+      document.getElementById("qrLink").textContent = data.location.qr_url;
+      document.getElementById("qrDownload").href = data.location.qr_image;
+      loadLocations();
+    }
+
+    async function deleteLocation(id, name) {
+      if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+      const res = await fetch("/api/locations/" + id, { method: "DELETE" });
+      if (res.ok) loadLocations();
+      else alert("Delete failed");
+    }
+
+    async function loadLocations() {
+      const res = await fetch("/api/my-locations");
+      const data = await res.json();
+      const list = document.getElementById("list");
+      if (!data.locations.length) {
+        list.innerHTML = "<p class='muted'>No locations yet. Create your first one above.</p>";
+        return;
+      }
+      list.innerHTML = data.locations.map(l => `
+        <div class="loc-card">
+          <h3>${escapeHtml(l.name)} ${l.is_verified ? '<span class="badge badge-ok">Verified</span>' : '<span class="badge badge-no">Pending</span>'}</h3>
+          <p class="muted">${escapeHtml(l.type)}${l.address ? ' · ' + escapeHtml(l.address) : ''}</p>
+          <p class="muted" style="margin-top:0.4rem;font-size:0.8rem;">${l.qr_url}</p>
+          <div style="margin-top:0.6rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a href="${l.qr_image}" download class="btn btn-dark btn-sm">Download QR</a>
+            <a href="/print-qr/${l.slug}" target="_blank" class="btn btn-primary btn-sm">Print sheet</a>
+            <a href="/l/${l.slug}" target="_blank" class="btn btn-outline btn-sm">Preview</a>
+            <button class="btn btn-outline btn-sm" onclick='showForm(${JSON.stringify(l).replace(/'/g, "&#39;")})'>Edit</button>
+            <button class="btn btn-red btn-sm" onclick="deleteLocation('${l.id}', '${escapeHtml(l.name).replace(/'/g, "\\'")}')">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function escapeHtml(s) {
+      if (!s) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    async function logout() {
+      await fetch("/api/logout", { method: "POST" });
+      location.href = "/";
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>

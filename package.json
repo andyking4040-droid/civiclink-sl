@@ -1,0 +1,22 @@
+{
+  "name": "civiclink",
+  "version": "2.1.0",
+  "description": "CivicLINK – ASK&KNOW BEFORE YOU GO | Sierra Leone | ACOSAT Digital",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.5",
+    "uuid": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

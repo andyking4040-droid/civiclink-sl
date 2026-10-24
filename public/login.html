@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login – CivicLINK</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="ask-banner">ASK&KNOW BEFORE YOU GO</div>
+  <main class="container" style="padding-top:2rem;">
+    <div class="card">
+      <h2 style="margin-bottom:1rem;">Login</h2>
+      <div id="err" class="error" style="display:none;"></div>
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com" />
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Your password" />
+      <button class="btn btn-primary" onclick="login()">Login</button>
+      <p class="muted" style="margin-top:1rem;text-align:center;">
+        No account? <a href="/register">Register here</a>
+      </p>
+    </div>
+  </main>
+  <script>
+    async function login() {
+      const err = document.getElementById("err");
+      err.style.display = "none";
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("email").value.trim(),
+          password: document.getElementById("password").value
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        err.textContent = data.error;
+        err.style.display = "block";
+        return;
+      }
+      if (data.user.role === "admin") location.href = "/admin";
+      else location.href = "/publisher";
+    }
+  </script>
+</body>
+</html>

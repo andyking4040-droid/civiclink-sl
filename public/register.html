@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register – CivicLINK | ASK&KNOW BEFORE YOU GO</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    .steps { display: flex; gap: 0.35rem; margin-bottom: 1.25rem; }
+    .step-dot {
+      flex: 1; height: 4px; border-radius: 2px; background: var(--border);
+    }
+    .step-dot.on { background: var(--blue); }
+    .plan-card {
+      border: 2px solid var(--border); border-radius: 12px; padding: 1rem;
+      margin-bottom: 0.75rem; cursor: pointer; transition: border-color 0.15s;
+    }
+    .plan-card.selected { border-color: var(--blue); background: #f0f4fc; }
+    .plan-card h4 { font-size: 1rem; margin-bottom: 0.25rem; }
+    .plan-price { font-size: 1.25rem; font-weight: 800; color: var(--blue); }
+    .plan-note { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+    .badge-rec {
+      display: inline-block; font-size: 0.65rem; font-weight: 700;
+      background: var(--red); color: #fff; padding: 0.15rem 0.45rem;
+      border-radius: 999px; margin-left: 0.35rem; vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="ask-banner">
+    ASK&KNOW BEFORE YOU GO
+    <small>Empowering citizens with verified information before they travel</small>
+  </div>
+
+  <main class="container" style="padding-top:1.5rem;">
+    <h1 style="font-size:1.35rem;margin-bottom:0.25rem;">Welcome to CivicLink</h1>
+    <p class="muted" style="margin-bottom:1rem;">Subscribe to create and manage your location QR codes.</p>
+
+    <div class="steps">
+      <div class="step-dot on" id="d1"></div>
+      <div class="step-dot" id="d2"></div>
+      <div class="step-dot" id="d3"></div>
+      <div class="step-dot" id="d4"></div>
+    </div>
+
+    <div id="err" class="error" style="display:none;"></div>
+
+    <!-- STEP 1: Plan -->
+    <div id="step1" class="card">
+      <h2 style="font-size:1.05rem;margin-bottom:0.75rem;">Step 1: Choose Your Access Plan</h2>
+      <p class="muted" style="margin-bottom:1rem;font-size:0.85rem;">
+        MRU member countries receive solidarity rates. All amounts settle in local currency; Sierra Leone (NLe) is the benchmark.
+      </p>
+      <label>Country / Location</label>
+      <select id="country" onchange="updatePrices()">
+        <option value="SL">Sierra Leone</option>
+        <option value="LR">Liberia</option>
+        <option value="GN">Guinea</option>
+        <option value="CI">Côte d'Ivoire</option>
+        <option value="US">United States & Global</option>
+        <option value="CA">Canada</option>
+      </select>
+
+      <div class="plan-card selected" id="planAnnual" onclick="selectPlan('annual')">
+        <h4>Annual Access Pass <span class="badge-rec">Recommended</span></h4>
+        <div class="plan-price" id="priceAnnual">NLe 50.00 / year</div>
+        <div class="plan-note">One payment covers 365 days. Save vs monthly.</div>
+      </div>
+      <div class="plan-card" id="planMonthly" onclick="selectPlan('monthly')">
+        <h4>Monthly Access Pass</h4>
+        <div class="plan-price" id="priceMonthly">NLe 5.00 / month</div>
+        <div class="plan-note">Flexible month-to-month access.</div>
+      </div>
+
+      <button class="btn btn-primary" onclick="goStep(2)">Continue</button>
+    </div>
+
+    <!-- STEP 2: Account -->
+    <div id="step2" class="card" style="display:none;">
+      <h2 style="font-size:1.05rem;margin-bottom:0.75rem;">Step 2: Account Information</h2>
+      <label>Full Name *</label>
+      <input type="text" id="name" placeholder="Your full legal name" />
+      <label>Mobile Number * (with country code)</label>
+      <input type="tel" id="phone" placeholder="+232 ..." />
+      <label>Email Address *</label>
+      <input type="email" id="email" placeholder="you@example.com" />
+      <label>Password * (min 6 characters)</label>
+      <input type="password" id="password" placeholder="Create a password" />
+      <button class="btn btn-primary" onclick="goStep(3)">Continue</button>
+      <button class="btn btn-outline" style="margin-top:0.5rem;" onclick="goStep(1)">Back</button>
+    </div>
+
+    <!-- STEP 3: Payment summary -->
+    <div id="step3" class="card" style="display:none;">
+      <h2 style="font-size:1.05rem;margin-bottom:0.75rem;">Step 3: Payment</h2>
+      <p class="muted" style="margin-bottom:1rem;font-size:0.9rem;">
+        You will pay securely via Monime (Orange Money, AfriMoney, and other supported methods).
+      </p>
+      <div class="card" style="background:#f8fafc;margin-bottom:1rem;">
+        <div class="detail-row"><span class="detail-label">Plan</span><span id="sumPlan">—</span></div>
+        <div class="detail-row"><span class="detail-label">Country</span><span id="sumCountry">—</span></div>
+        <div class="detail-row"><span class="detail-label">Amount</span><span id="sumAmount" style="font-weight:700;">—</span></div>
+      </div>
+      <button class="btn btn-primary" onclick="goStep(4)">Continue to Confirm</button>
+      <button class="btn btn-outline" style="margin-top:0.5rem;" onclick="goStep(2)">Back</button>
+    </div>
+
+    <!-- STEP 4: Confirm + Terms -->
+    <div id="step4" class="card" style="display:none;">
+      <h2 style="font-size:1.05rem;margin-bottom:0.75rem;">Step 4: Confirm & Activate</h2>
+      <label style="display:flex;gap:0.6rem;align-items:flex-start;margin-bottom:1rem;font-weight:400;cursor:pointer;">
+        <input type="checkbox" id="agree" style="width:auto;margin:0.2rem 0 0 0;" />
+        <span style="font-size:0.88rem;">
+          I agree to the
+          <a href="/terms.html" target="_blank">ACOSAT Digital Terms of Service, Privacy Policy, Hold Harmless Agreement, and Disclaimers</a>.
+          I understand CivicLink is an optional service and subscriptions are non-refundable once activated.
+        </span>
+      </label>
+      <button class="btn btn-red" onclick="subscribe()">Subscribe & Activate Pass</button>
+      <p class="muted" style="margin-top:0.75rem;font-size:0.8rem;">
+        Mobile Money users: after redirect, approve the payment on your phone with your PIN. Access activates when payment succeeds.
+      </p>
+      <button class="btn btn-outline" style="margin-top:0.5rem;" onclick="goStep(3)">Back</button>
+    </div>
+
+    <p class="muted" style="text-align:center;margin-top:1.25rem;">
+      Already have an account? <a href="/login">Login</a>
+    </p>
+  </main>
+
+  <script>
+    const PRICES = {
+      SL: { annual: { label: "NLe 50.00 / year", value: 5000, currency: "SLE" }, monthly: { label: "NLe 5.00 / month", value: 500, currency: "SLE" } },
+      LR: { annual: { label: "L$ 400.00 / year", value: 40000, currency: "LRD" }, monthly: { label: "L$ 40.00 / month", value: 4000, currency: "LRD" } },
+      GN: { annual: { label: "FG 20,000 / year", value: 2000000, currency: "GNF" }, monthly: { label: "FG 2,000 / month", value: 200000, currency: "GNF" } },
+      CI: { annual: { label: "1,250 FCFA / year", value: 125000, currency: "XOF" }, monthly: { label: "125 FCFA / month", value: 12500, currency: "XOF" } },
+      US: { annual: { label: "US$ 10.00 / year", value: 1000, currency: "USD" }, monthly: { label: "US$ 1.00 / month", value: 100, currency: "USD" } },
+      CA: { annual: { label: "CAD$ 14.00 / year", value: 1400, currency: "CAD" }, monthly: { label: "CAD$ 1.50 / month", value: 150, currency: "CAD" } },
+    };
+    // Note: amount values are in minor units (cents) for Monime where applicable.
+    // SLE: 50.00 NLe = 5000 if 2 decimal places.
+
+    let plan = "annual";
+    let step = 1;
+
+    function selectPlan(p) {
+      plan = p;
+      document.getElementById("planAnnual").classList.toggle("selected", p === "annual");
+      document.getElementById("planMonthly").classList.toggle("selected", p === "monthly");
+    }
+
+    function updatePrices() {
+      const c = document.getElementById("country").value;
+      document.getElementById("priceAnnual").textContent = PRICES[c].annual.label;
+      document.getElementById("priceMonthly").textContent = PRICES[c].monthly.label;
+    }
+
+    function goStep(n) {
+      document.getElementById("err").style.display = "none";
+      if (n === 2) {
+        // ok
+      }
+      if (n === 3) {
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        if (!name || !phone || !email || password.length < 6) {
+          showErr("Please fill name, phone, email, and a password of at least 6 characters.");
+          return;
+        }
+        const c = document.getElementById("country").value;
+        const names = { SL: "Sierra Leone", LR: "Liberia", GN: "Guinea", CI: "Côte d'Ivoire", US: "United States & Global", CA: "Canada" };
+        document.getElementById("sumPlan").textContent = plan === "annual" ? "Annual Access Pass" : "Monthly Access Pass";
+        document.getElementById("sumCountry").textContent = names[c];
+        document.getElementById("sumAmount").textContent = PRICES[c][plan].label;
+      }
+      step = n;
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById("step" + i).style.display = i === n ? "block" : "none";
+        document.getElementById("d" + i).classList.toggle("on", i <= n);
+      }
+    }
+
+    function showErr(msg) {
+      const e = document.getElementById("err");
+      e.textContent = msg;
+      e.style.display = "block";
+      window.scrollTo(0, 0);
+    }
+
+    async function subscribe() {
+      if (!document.getElementById("agree").checked) {
+        showErr("You must agree to the Terms of Service and Privacy Policy to continue.");
+        return;
+      }
+      const c = document.getElementById("country").value;
+      const price = PRICES[c][plan];
+      const body = {
+        name: document.getElementById("name").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value,
+        country: c,
+        plan: plan,
+        amount_value: price.value,
+        currency: price.currency
+      };
+      try {
+        const res = await fetch("/api/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showErr(data.error || "Subscription failed");
+          return;
+        }
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else if (data.success) {
+          window.location.href = "/publisher?activated=1";
+        } else {
+          showErr("Unexpected response from payment system");
+        }
+      } catch (e) {
+        showErr("Network error. Please try again.");
+      }
+    }
+
+    updatePrices();
+  </script>
+</body>
+</html>

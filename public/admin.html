@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin – CivicLINK</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div>
+        <div class="logo">Civic<span>LINK</span> Admin</div>
+        <div class="slogan">ASK&KNOW BEFORE YOU GO</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="wide">
+    <h2 style="margin:1rem 0;">All Locations</h2>
+    <div id="list"><p class="muted">Loading...</p></div>
+  </main>
+
+  <script>
+    async function checkAuth() {
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      if (!data.user || data.user.role !== "admin") {
+        location.href = "/login";
+        return;
+      }
+      load();
+    }
+
+    async function load() {
+      const res = await fetch("/api/admin/locations");
+      const data = await res.json();
+      const list = document.getElementById("list");
+      if (!data.locations.length) {
+        list.innerHTML = "<p class='muted'>No locations yet.</p>";
+        return;
+      }
+      list.innerHTML = data.locations.map(l => `
+        <div class="loc-card">
+          <h3>${l.name}
+            ${l.is_verified ? '<span class="badge badge-ok">Verified</span>' : '<span class="badge badge-no">Unverified</span>'}
+            ${l.is_active ? '' : '<span class="badge badge-no">Inactive</span>'}
+          </h3>
+          <p class="muted">${l.type} · Owner: ${l.owner_name || '—'} ${l.owner_email ? '('+l.owner_email+')' : ''}</p>
+          <p class="muted" style="font-size:0.8rem;">${l.address || ''} · /l/${l.slug}</p>
+          <div style="margin-top:0.6rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button class="btn btn-sm ${l.is_verified ? 'btn-outline' : 'btn-teal'}"
+              onclick="verify('${l.id}', ${!l.is_verified})">${l.is_verified ? 'Unverify' : 'Verify'}</button>
+            <button class="btn btn-outline btn-sm" onclick="toggle('${l.id}')">${l.is_active ? 'Deactivate' : 'Activate'}</button>
+            <a href="/l/${l.slug}" target="_blank" class="btn btn-outline btn-sm">View</a>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function verify(id, verified) {
+      await fetch("/api/admin/locations/" + id + "/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verified })
+      });
+      load();
+    }
+
+    async function toggle(id) {
+      await fetch("/api/admin/locations/" + id + "/toggle", { method: "POST" });
+      load();
+    }
+
+    async function logout() {
+      await fetch("/api/logout", { method: "POST" });
+      location.href = "/";
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>

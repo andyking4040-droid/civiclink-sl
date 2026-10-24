@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CivicLINK – ASK&KNOW BEFORE YOU GO</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="ask-banner">
+    ASK&KNOW BEFORE YOU GO
+    <small>Save Time. Save Money. Avoid Unnecessary Trips.</small>
+  </div>
+
+  <main class="container">
+    <div style="text-align:right;margin-bottom:0.5rem;">
+      <div id="google_translate_element"></div>
+    </div>
+
+    <div class="hero">
+      <img src="/logo.png" alt="ACOSAT" style="width:64px;height:64px;margin-bottom:0.75rem;" />
+      <h1>CivicLINK</h1>
+      <p>Find information, services and places before you travel.</p>
+    </div>
+
+    <div class="search-box">
+      <input type="search" id="q" placeholder="Search clinics, banks, offices..." />
+      <button class="btn btn-primary btn-sm" onclick="doSearch()">Search</button>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <select id="typeFilter" onchange="doSearch()" style="width:auto;margin:0;">
+        <option value="">All types</option>
+        <option value="pharmacy">Pharmacy</option>
+        <option value="clinic">Clinic / Hospital</option>
+        <option value="ministry">Ministry / Government</option>
+        <option value="school">School / University</option>
+        <option value="business">Business</option>
+        <option value="church">Church</option>
+        <option value="mosque">Mosque</option>
+        <option value="market">Market Stall</option>
+        <option value="community">Community</option>
+      </select>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="card" style="margin-top:1.5rem;">
+      <h3 style="margin-bottom:0.5rem;">Are you a business, clinic, school or organization?</h3>
+      <p class="muted" style="margin-bottom:1rem;">Create your free CivicLINK page and QR code in minutes.</p>
+      <a href="/register" class="btn btn-red">Create Your QR Code</a>
+      <a href="/login" class="btn btn-outline" style="margin-top:0.5rem;">Already registered? Login</a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    CivicLINK · ACOSAT Digital<br>
+    ASK&KNOW BEFORE YOU GO · Mano River Union
+  </footer>
+
+  <script>
+    async function doSearch() {
+      const q = document.getElementById("q").value.trim();
+      const type = document.getElementById("typeFilter").value;
+      const box = document.getElementById("results");
+      if (q.length < 2 && !type) { box.innerHTML = ""; return; }
+      box.innerHTML = "<p class='muted'>Searching...</p>";
+      let url = "/api/search?q=" + encodeURIComponent(q);
+      if (type) url += "&type=" + encodeURIComponent(type);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.results.length) {
+        box.innerHTML = "<p class='muted'>No results found.</p>";
+        return;
+      }
+      box.innerHTML = data.results.map(r => `
+        <a href="/l/${r.slug}" class="loc-card" style="display:block;text-decoration:none;color:inherit;">
+          <h3>${r.name} ${r.is_verified ? '<span class="badge badge-ok">Verified</span>' : ''}</h3>
+          <p class="muted">${r.type}${r.address ? ' · ' + r.address : ''}</p>
+        </a>
+      `).join("");
+    }
+    document.getElementById("q").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'en,fr,pt,ar,kpe,men',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>
