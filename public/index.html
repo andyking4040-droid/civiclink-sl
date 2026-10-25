@@ -20,15 +20,20 @@
     <div class="hero">
       <img src="/logo.png" alt="ACOSAT" style="width:64px;height:64px;margin-bottom:0.75rem;" />
       <h1>CivicLINK</h1>
-      <p>Find information, services and places before you travel.</p>
+      <p>Find businesses, services and places before you go.</p>
     </div>
 
-    <div class="search-box">
-      <input type="search" id="q" placeholder="Search clinics, banks, offices..." />
-      <button class="btn btn-primary btn-sm" onclick="doSearch()">Search</button>
+    <!-- 1. Business CTA first -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <h3 style="margin-bottom:0.4rem;">Are you a business, clinic, school or organization?</h3>
+      <p class="muted" style="margin-bottom:1rem;">Add your location. Create your CivicLINK account and QR code in minutes.</p>
+      <a href="/register" class="btn btn-red">Create Your CivicLINK Account</a>
     </div>
-    <div style="margin-bottom:1rem;">
-      <select id="typeFilter" onchange="doSearch()" style="width:auto;margin:0;">
+
+    <!-- 2. Type filter -->
+    <div style="margin-bottom:0.75rem;">
+      <label style="margin-bottom:0.35rem;">Filter by type</label>
+      <select id="typeFilter" onchange="doSearch()" style="margin-bottom:0;">
         <option value="">All types</option>
         <option value="pharmacy">Pharmacy</option>
         <option value="clinic">Clinic / Hospital</option>
@@ -42,13 +47,17 @@
       </select>
     </div>
 
+    <!-- 3. Search -->
+    <div class="search-box">
+      <input type="search" id="q" placeholder="Search clinics, banks, offices..." />
+      <button class="btn btn-primary btn-sm" onclick="doSearch()">Search</button>
+    </div>
+
     <div id="results"></div>
 
-    <div class="card" style="margin-top:1.5rem;">
-      <h3 style="margin-bottom:0.5rem;">Are you a business, clinic, school or organization?</h3>
-      <p class="muted" style="margin-bottom:1rem;">Create your free CivicLINK page and QR code in minutes.</p>
-      <a href="/register" class="btn btn-red">Create Your QR Code</a>
-      <a href="/login" class="btn btn-outline" style="margin-top:0.5rem;">Already registered? Login</a>
+    <!-- 4. Login -->
+    <div style="margin-top:1.5rem;text-align:center;">
+      <a href="/login" class="btn btn-outline">Already registered? Login</a>
     </div>
   </main>
 
@@ -84,7 +93,7 @@
     function googleTranslateElementInit() {
       new google.translate.TranslateElement({
         pageLanguage: 'en',
-        includedLanguages: 'en,fr,pt,ar,kpe,men',
+        includedLanguages: 'en,fr,pt,ar',
         layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
         autoDisplay: false
       }, 'google_translate_element');
