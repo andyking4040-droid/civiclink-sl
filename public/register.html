@@ -7,9 +7,7 @@
   <link rel="stylesheet" href="/css/styles.css" />
   <style>
     .steps { display: flex; gap: 0.35rem; margin-bottom: 1.25rem; }
-    .step-dot {
-      flex: 1; height: 4px; border-radius: 2px; background: var(--border);
-    }
+    .step-dot { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
     .step-dot.on { background: var(--blue); }
     .plan-card {
       border: 2px solid var(--border); border-radius: 12px; padding: 1rem;
@@ -24,12 +22,16 @@
       background: var(--red); color: #fff; padding: 0.15rem 0.45rem;
       border-radius: 999px; margin-left: 0.35rem; vertical-align: middle;
     }
+    .section-label {
+      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--red); margin-bottom: 0.75rem;
+    }
   </style>
 </head>
 <body>
   <div class="ask-banner">
     ASK&KNOW BEFORE YOU GO
-    <small>Empowering citizens with verified information before they travel</small>
+    <small>Save Time. Save Money. Avoid Unnecessary Trips.</small>
   </div>
 
   <main class="container" style="padding-top:1.5rem;">
@@ -47,9 +49,11 @@
 
     <!-- STEP 1: Plan -->
     <div id="step1" class="card">
-      <h2 style="font-size:1.05rem;margin-bottom:0.75rem;">Step 1: Choose Your Access Plan</h2>
+      <div class="section-label">For Business and Service Providers</div>
+      <h2 style="font-size:1.05rem;margin-bottom:0.5rem;">Step 1: Choose Your Access Plan</h2>
       <p class="muted" style="margin-bottom:1rem;font-size:0.85rem;">
-        MRU member countries receive solidarity rates. All amounts settle in local currency; Sierra Leone (NLe) is the benchmark.
+        Host country Sierra Leone currency (<strong>NLe</strong>) is the benchmark.
+        MRU member countries receive solidarity rates in local currency.
       </p>
       <label>Country / Location</label>
       <select id="country" onchange="updatePrices()">
@@ -57,7 +61,7 @@
         <option value="LR">Liberia</option>
         <option value="GN">Guinea</option>
         <option value="CI">Côte d'Ivoire</option>
-        <option value="US">United States & Global</option>
+        <option value="US">Other countries (USD)</option>
         <option value="CA">Canada</option>
       </select>
 
@@ -78,13 +82,13 @@
     <!-- STEP 2: Account -->
     <div id="step2" class="card" style="display:none;">
       <h2 style="font-size:1.05rem;margin-bottom:0.75rem;">Step 2: Account Information</h2>
-      <label>Full Name *</label>
+      <label>Full Name * <span class="muted" style="font-weight:400;">(as on ID, payment card, or phone)</span></label>
       <input type="text" id="name" placeholder="Your full legal name" />
       <label>Mobile Number * (with country code)</label>
       <input type="tel" id="phone" placeholder="+232 ..." />
       <label>Email Address *</label>
       <input type="email" id="email" placeholder="you@example.com" />
-      <label>Password * (min 6 characters)</label>
+      <label>Password * <span class="muted" style="font-weight:400;">(min 6 characters, case-sensitive)</span></label>
       <input type="password" id="password" placeholder="Create a password" />
       <button class="btn btn-primary" onclick="goStep(3)">Continue</button>
       <button class="btn btn-outline" style="margin-top:0.5rem;" onclick="goStep(1)">Back</button>
@@ -109,14 +113,14 @@
     <div id="step4" class="card" style="display:none;">
       <h2 style="font-size:1.05rem;margin-bottom:0.75rem;">Step 4: Confirm & Activate</h2>
       <label style="display:flex;gap:0.6rem;align-items:flex-start;margin-bottom:1rem;font-weight:400;cursor:pointer;">
-        <input type="checkbox" id="agree" style="width:auto;margin:0.2rem 0 0 0;" />
+        <input type="checkbox" id="agree" style="width:auto;margin:0.2rem 0 0 0;" onchange="toggleSubscribe()" />
         <span style="font-size:0.88rem;">
           I agree to the
           <a href="/terms.html" target="_blank">ACOSAT Digital Terms of Service, Privacy Policy, Hold Harmless Agreement, and Disclaimers</a>.
           I understand CivicLink is an optional service and subscriptions are non-refundable once activated.
         </span>
       </label>
-      <button class="btn btn-red" onclick="subscribe()">Subscribe & Activate Pass</button>
+      <button class="btn btn-red" id="subscribeBtn" onclick="subscribe()" disabled style="opacity:0.5;">Subscribe & Activate Pass</button>
       <p class="muted" style="margin-top:0.75rem;font-size:0.8rem;">
         Mobile Money users: after redirect, approve the payment on your phone with your PIN. Access activates when payment succeeds.
       </p>
@@ -137,8 +141,6 @@
       US: { annual: { label: "US$ 10.00 / year", value: 1000, currency: "USD" }, monthly: { label: "US$ 1.00 / month", value: 100, currency: "USD" } },
       CA: { annual: { label: "CAD$ 14.00 / year", value: 1400, currency: "CAD" }, monthly: { label: "CAD$ 1.50 / month", value: 150, currency: "CAD" } },
     };
-    // Note: amount values are in minor units (cents) for Monime where applicable.
-    // SLE: 50.00 NLe = 5000 if 2 decimal places.
 
     let plan = "annual";
     let step = 1;
@@ -155,11 +157,15 @@
       document.getElementById("priceMonthly").textContent = PRICES[c].monthly.label;
     }
 
+    function toggleSubscribe() {
+      const ok = document.getElementById("agree").checked;
+      const btn = document.getElementById("subscribeBtn");
+      btn.disabled = !ok;
+      btn.style.opacity = ok ? "1" : "0.5";
+    }
+
     function goStep(n) {
       document.getElementById("err").style.display = "none";
-      if (n === 2) {
-        // ok
-      }
       if (n === 3) {
         const name = document.getElementById("name").value.trim();
         const phone = document.getElementById("phone").value.trim();
@@ -170,7 +176,10 @@
           return;
         }
         const c = document.getElementById("country").value;
-        const names = { SL: "Sierra Leone", LR: "Liberia", GN: "Guinea", CI: "Côte d'Ivoire", US: "United States & Global", CA: "Canada" };
+        const names = {
+          SL: "Sierra Leone", LR: "Liberia", GN: "Guinea", CI: "Côte d'Ivoire",
+          US: "Other countries (USD)", CA: "Canada"
+        };
         document.getElementById("sumPlan").textContent = plan === "annual" ? "Annual Access Pass" : "Monthly Access Pass";
         document.getElementById("sumCountry").textContent = names[c];
         document.getElementById("sumAmount").textContent = PRICES[c][plan].label;
