@@ -341,7 +341,7 @@ app.post("/api/subscribe", async (req, res) => {
   }
 });
 
-app.get("/api/payment-success", async (req, res) => {
+app.all("/api/payment-success", async (req, res) => {
   try {
     const ref = req.query.ref;
     if (!ref) return res.redirect("/register?error=missing_ref");
@@ -563,9 +563,20 @@ app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "adm
 app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/register", (req, res) => res.sendFile(path.join(__dirname, "public", "register.html")));
 app.get("/terms.html", (req, res) => res.sendFile(path.join(__dirname, "public", "terms.html")));
-app.get("/payment-success", (req, res) => {
-  // HTML page not needed — API handler redirects; keep fallback
-  res.redirect("/api/payment-success?" + new URLSearchParams(req.query).toString());
+app.all("/payment-success", async (req, res) => {
+  // Monime may POST or GET with ref in query or body
+  const ref =
+    (req.query && req.query.ref) ||
+    (req.body && (req.body.ref || req.body.reference || req.body.callbackState)) ||
+    null;
+  if (ref) {
+    return res.redirect("/api/payment-success?ref=" + encodeURIComponent(String(ref)));
+  }
+  // Fallback: try to complete latest pending for session user
+  if (req.session && req.session.pendingRef) {
+    return res.redirect("/api/payment-success?ref=" + encodeURIComponent(req.session.pendingRef));
+  }
+  return res.redirect("/publisher?activated=1");
 });
 
 async function ensureAdmin() {
