@@ -409,7 +409,7 @@ app.post("/api/upload-image", requireAuth, (req, res) => {
   upload.single("image")(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message || "Upload failed" });
     if (!req.file) return res.status(400).json({ error: "No image file" });
-    const url = "/images/" + req.file.filename;
+    const url = `${BASE_URL}/images/${req.file.filename}`;
     return res.json({ ok: true, url });
   });
 });
@@ -517,6 +517,27 @@ app.put("/api/locations/:id", requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Update failed" });
+  }
+});
+
+
+app.post("/api/locations/:id/regenerate-qr", requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM locations WHERE id = $1 AND owner_id = $2`,
+      [req.params.id, req.session.userId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    const loc = rows[0];
+    const qrPath = await generateQR(loc.slug);
+    res.json({
+      success: true,
+      qr_url: `${BASE_URL}/l/${loc.slug}`,
+      qr_image: qrPath,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "QR regenerate failed" });
   }
 });
 
