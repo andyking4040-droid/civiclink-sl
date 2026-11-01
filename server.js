@@ -100,20 +100,10 @@ app.use("/qrcodes", express.static(path.join(__dirname, "uploads/qrcodes")));
 const qrDir = path.join(__dirname, "uploads/qrcodes");
 if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
 
-const imgDir = path.join(__dirname, "uploads/images");
-if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
-app.use("/images", express.static(imgDir));
-
+// Images stored as data URLs in Postgres (Render disk is ephemeral)
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, imgDir),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname || "").toLowerCase() || ".jpg";
-      const safe = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext) ? ext : ".jpg";
-      cb(null, "loc-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + safe);
-    },
-  }),
-  limits: { fileSize: 3 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) cb(null, true);
     else cb(new Error("Only JPG, PNG, WEBP, or GIF images allowed"));
@@ -409,7 +399,9 @@ app.post("/api/upload-image", requireAuth, (req, res) => {
   upload.single("image")(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message || "Upload failed" });
     if (!req.file) return res.status(400).json({ error: "No image file" });
-    const url = `${BASE_URL}/images/${req.file.filename}`;
+    // Persist in DB as data URL so images survive Render restarts
+    const b64 = req.file.buffer.toString("base64");
+    const url = `data:${req.file.mimetype};base64,${b64}`;
     return res.json({ ok: true, url });
   });
 });
