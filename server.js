@@ -11,6 +11,7 @@ const { Pool } = require("pg");
 const QRCode = require("qrcode");
 const path = require("path");
 const fs = require("fs");
+const multer = require("multer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -98,6 +99,26 @@ app.use("/qrcodes", express.static(path.join(__dirname, "uploads/qrcodes")));
 
 const qrDir = path.join(__dirname, "uploads/qrcodes");
 if (!fs.existsSync(qrDir)) fs.mkdirSync(qrDir, { recursive: true });
+
+const imgDir = path.join(__dirname, "uploads/images");
+if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+app.use("/images", express.static(imgDir));
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, imgDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || "").toLowerCase() || ".jpg";
+      const safe = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext) ? ext : ".jpg";
+      cb(null, "loc-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + safe);
+    },
+  }),
+  limits: { fileSize: 3 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error("Only JPG, PNG, WEBP, or GIF images allowed"));
+  },
+});
 
 const logoPath = path.join(__dirname, "public", "logo.png");
 
@@ -382,6 +403,40 @@ app.post("/api/webhooks/monime", async (req, res) => {
 });
 
 // ---------- Locations ----------
+
+// Upload business / shop image
+app.post("/api/upload-image", requireAuth, (req, res) => {
+  upload.single("image")(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message || "Upload failed" });
+    if (!req.file) return res.status(400).json({ error: "No image file" });
+    const url = "/images/" + req.file.filename;
+    return res.json({ ok: true, url });
+  });
+});
+
+// Delete account (GDPR / Play Console requirement)
+app.post("/api/delete-account", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    // Delete user's locations QR files optional cleanup
+    const locs = await pool.query("SELECT slug FROM locations WHERE owner_id = $1", [userId]);
+    for (const row of locs.rows) {
+      const fp = path.join(qrDir, row.slug + ".png");
+      try { if (fs.existsSync(fp)) fs.unlinkSync(fp); } catch (_) {}
+    }
+    await pool.query("DELETE FROM payments WHERE user_id = $1", [userId]);
+    await pool.query("DELETE FROM locations WHERE owner_id = $1", [userId]);
+    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    req.session.destroy(() => {});
+    return res.json({ ok: true, message: "Account and associated data deleted" });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Could not delete account" });
+  }
+});
+
+app.get("/delete-account", (req, res) => res.sendFile(path.join(__dirname, "public", "delete-account.html")));
+
 app.post("/api/locations", requireAuth, async (req, res) => {
   try {
     // Subscription check
@@ -398,13 +453,13 @@ app.post("/api/locations", requireAuth, async (req, res) => {
       }
     }
 
-    const { name, type, address, phone, whatsapp, hours, services, description } = req.body;
+    const { name, type, address, phone, whatsapp, hours, services, description, image_url } = req.body;
     if (!name) return res.status(400).json({ error: "Location name is required" });
     const slug = makeSlug(name);
     const { rows } = await pool.query(
-      `INSERT INTO locations (owner_id, name, type, address, phone, whatsapp, hours, services, description, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [req.session.userId, name, type || "business", address || null, phone || null, whatsapp || phone || null, hours || null, services || null, description || null, slug]
+      `INSERT INTO locations (owner_id, name, type, address, phone, whatsapp, hours, services, description, slug, image_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [req.session.userId, name, type || "business", address || null, phone || null, whatsapp || phone || null, hours || null, services || null, description || null, slug, image_url || null]
     );
     const location = rows[0];
     const qrPath = await generateQR(slug);
@@ -446,14 +501,16 @@ app.get("/api/locations/:id", requireAuth, async (req, res) => {
 
 app.put("/api/locations/:id", requireAuth, async (req, res) => {
   try {
-    const { name, type, address, phone, whatsapp, hours, services, description } = req.body;
+    const { name, type, address, phone, whatsapp, hours, services, description, image_url } = req.body;
     const { rows } = await pool.query(
       `UPDATE locations SET
          name = COALESCE($1, name), type = COALESCE($2, type), address = COALESCE($3, address),
          phone = COALESCE($4, phone), whatsapp = COALESCE($5, whatsapp), hours = COALESCE($6, hours), services = COALESCE($7, services),
-         description = COALESCE($8, description), updated_at = NOW()
-       WHERE id = $9 AND owner_id = $10 RETURNING *`,
-      [name, type, address, phone, whatsapp, hours, services, description, req.params.id, req.session.userId]
+         description = COALESCE($8, description),
+         image_url = COALESCE($9, image_url),
+         updated_at = NOW()
+       WHERE id = $10 AND owner_id = $11 RETURNING *`,
+      [name, type, address, phone, whatsapp, hours, services, description, image_url, req.params.id, req.session.userId]
     );
     if (!rows[0]) return res.status(404).json({ error: "Location not found" });
     res.json({ success: true, location: rows[0] });
