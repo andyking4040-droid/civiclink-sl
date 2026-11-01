@@ -1,7 +1,7 @@
 {
   "name": "civiclink",
-  "version": "2.1.0",
-  "description": "CivicLINK – ASK&KNOW BEFORE YOU GO | Sierra Leone | ACOSAT Digital",
+  "version": "2.2.0",
+  "description": "CivicLINK \u2013 ASK&KNOW BEFORE YOU GO | Sierra Leone | ACOSAT Digital",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,7 +14,8 @@
     "pg": "^8.13.1",
     "qrcode": "^1.5.4",
     "sharp": "^0.33.5",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "multer": "^1.4.5-lts.1"
   },
   "engines": {
     "node": ">=18"
