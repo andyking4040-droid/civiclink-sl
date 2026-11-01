@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Delete account – CivicLINK</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="ask-banner">ASK&KNOW BEFORE YOU GO</div>
+  <main class="container" style="padding-top:1.5rem;max-width:480px;">
+    <h1 style="font-size:1.25rem;">Delete your CivicLINK account</h1>
+    <p class="muted">This permanently deletes your account, locations, QR codes, and payment records. This cannot be undone.</p>
+    <div id="msg"></div>
+    <div class="card">
+      <p><strong>Steps:</strong></p>
+      <ol style="margin:0.5rem 0 1rem 1.2rem;font-size:0.95rem;">
+        <li>Log in to your account</li>
+        <li>Confirm deletion below</li>
+        <li>Or email <a href="mailto:andyking4040@gmail.com">andyking4040@gmail.com</a> with subject “Delete CivicLINK account”</li>
+      </ol>
+      <label style="display:flex;gap:0.5rem;align-items:flex-start;font-weight:400;">
+        <input type="checkbox" id="confirm" style="width:auto;margin-top:0.2rem;" />
+        I understand this will permanently delete my data
+      </label>
+      <button class="btn btn-red" style="margin-top:1rem;" onclick="doDelete()">Delete my account</button>
+      <a href="/publisher" class="btn btn-outline" style="margin-top:0.5rem;display:block;text-align:center;">Cancel</a>
+    </div>
+  </main>
+  <script>
+    async function doDelete() {
+      if (!document.getElementById("confirm").checked) {
+        document.getElementById("msg").innerHTML = "<div class=\"error\">Please confirm first.</div>";
+        return;
+      }
+      if (!confirm("Delete account permanently?")) return;
+      const res = await fetch("/api/delete-account", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        document.getElementById("msg").innerHTML = "<div class=\"error\">" + (data.error || "Failed") + "</div>";
+        if (res.status === 401) location.href = "/login";
+        return;
+      }
+      document.getElementById("msg").innerHTML = "<div class=\"success\">Account deleted.</div>";
+      setTimeout(() => location.href = "/", 1500);
+    }
+  </script>
+</body>
+</html>

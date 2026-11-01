@@ -76,6 +76,7 @@
           <h1 class="loc-name">${l.name}</h1>
           ${l.is_verified ? '<div class="verified">✓ Verified on CivicLINK</div>' : ''}
         </div>
+        ${l.image_url ? `<img src="${l.image_url}" alt="${l.name}" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-bottom:1rem;" />` : ''}
         <div class="card">
           ${l.address ? `<div class="detail-row"><span class="detail-label">Address</span><span>${l.address}</span></div>` : ''}
           ${l.phone ? `<div class="detail-row"><span class="detail-label">Phone</span><span><a href="tel:${l.phone}">${l.phone}</a></span></div>` : ''}
@@ -109,7 +110,8 @@
         autoDisplay: false
       }, 'google_translate_element');
     }
-  </script>
+  
+</script>
   <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
