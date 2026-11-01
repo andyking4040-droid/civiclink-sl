@@ -13,7 +13,7 @@
         <div class="logo">Civic<span>LINK</span></div>
         <div class="slogan">ASK&KNOW BEFORE YOU GO</div>
       </div>
-      <button class="btn btn-outline btn-sm" style="color:#fff;border-color:#555;" onclick="logout()">Logout</button>
+      <button class="btn btn-sm" style="background:#C8102E;color:#fff;border:none;padding:0.4rem 0.9rem;font-weight:600;" onclick="logout()">Logout</button>
     </div>
   </header>
 
@@ -141,16 +141,17 @@
 
     async function uploadImageIfNeeded() {
       const fileInput = document.getElementById("imageFile");
+      const existing = (document.getElementById("image_url") && document.getElementById("image_url").value) || "";
       if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-        return document.getElementById("image_url").value || null;
+        return existing || null;
       }
       const fd = new FormData();
       fd.append("image", fileInput.files[0]);
       const res = await fetch("/api/upload-image", { method: "POST", body: fd });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Image upload failed");
-      document.getElementById("image_url").value = data.url;
-      return data.url;
+      document.getElementById("image_url").value = data.url || "";
+      return data.url || null;
     }
 
     document.getElementById("imageFile")?.addEventListener("change", () => {
@@ -164,60 +165,83 @@
     async function saveLocation() {
       const err = document.getElementById("formErr");
       err.style.display = "none";
-      const body = {
-        name: document.getElementById("name").value.trim(),
-        type: document.getElementById("type").value,
-        address: document.getElementById("address").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        whatsapp: document.getElementById("whatsapp").value.trim(),
-        hours: document.getElementById("hours").value.trim(),
-        services: document.getElementById("services").value.trim(),
-        description: document.getElementById("description").value,
-        image_url: await uploadImageIfNeeded().trim()
-      };
-      if (!body.name) {
-        err.textContent = "Name is required";
-        err.style.display = "block";
-        return;
-      }
+      const btn = document.getElementById("saveBtn");
+      const oldLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+      try {
+        let imageUrl = null;
+        try {
+          imageUrl = await uploadImageIfNeeded();
+        } catch (upErr) {
+          err.textContent = upErr.message || "Image upload failed";
+          err.style.display = "block";
+          return;
+        }
+        const body = {
+          name: document.getElementById("name").value.trim(),
+          type: document.getElementById("type").value,
+          address: document.getElementById("address").value.trim(),
+          phone: document.getElementById("phone").value.trim(),
+          whatsapp: document.getElementById("whatsapp").value.trim(),
+          hours: document.getElementById("hours").value.trim(),
+          services: document.getElementById("services").value.trim(),
+          description: document.getElementById("description").value,
+          image_url: imageUrl
+        };
+        if (!body.name) {
+          err.textContent = "Name is required";
+          err.style.display = "block";
+          return;
+        }
 
-      let res, data;
-      if (editingId) {
-        res = await fetch("/api/locations/" + editingId, {
-          method: "PUT",
+        let res, data;
+        if (editingId) {
+          res = await fetch("/api/locations/" + editingId, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            err.textContent = data.error || "Update failed";
+            err.style.display = "block";
+            return;
+          }
+          hideForm();
+          loadLocations();
+          alert("Location updated successfully");
+          return;
+        }
+
+        res = await fetch("/api/locations", {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
         });
-        data = await res.json();
+        data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          err.textContent = data.error;
+          err.textContent = data.error || "Could not create location";
           err.style.display = "block";
           return;
         }
         hideForm();
+        const qr = document.getElementById("qrResult");
+        qr.style.display = "block";
+        const qrImg = (data.location && data.location.qr_image) || "";
+        const qrUrl = (data.location && data.location.qr_url) || "";
+        document.getElementById("qrImg").src = qrImg ? (qrImg + "?t=" + Date.now()) : "";
+        document.getElementById("qrLink").textContent = qrUrl;
+        document.getElementById("qrDownload").href = qrImg || "#";
         loadLocations();
-        alert("Location updated successfully");
-        return;
-      }
-
-      res = await fetch("/api/locations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      data = await res.json();
-      if (!res.ok) {
-        err.textContent = data.error;
+        window.scrollTo(0, 0);
+      } catch (e) {
+        err.textContent = e.message || "Something went wrong";
         err.style.display = "block";
-        return;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = oldLabel;
       }
-      hideForm();
-      const qr = document.getElementById("qrResult");
-      qr.style.display = "block";
-      document.getElementById("qrImg").src = data.location.qr_image + "?t=" + Date.now();
-      document.getElementById("qrLink").textContent = data.location.qr_url;
-      document.getElementById("qrDownload").href = data.location.qr_image;
-      loadLocations();
     }
 
     async function deleteLocation(id, name) {
